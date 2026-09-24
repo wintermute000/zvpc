@@ -193,54 +193,24 @@ resource "null_resource" "cc_error_checker" {
 # in the same Availability Zone.
 ################################################################################
 
-# 1. Use a data source to find the Cloud Connector instances based on the
-#    tags that the cc_vm module is known to apply.
-data "aws_instances" "cc_vms" {
-  filter {
-    name   = "tag:Name"
-    values = [for i in range(var.cc_count) : "${var.name_prefix}-cc-vm-${i + 1}-${random_string.suffix.result}"]
-  }
-
-  # Ensure instances are running before we try to use them.
-  instance_state_names = ["running"]
-
-  # This is critical. The data source needs to run AFTER the instances
-  # have been created and tagged by the module.
-  depends_on = [module.cc_vm]
-}
-
-# 2. Use another data source to get the details of the network interfaces
-#    that are attached to the instances we just found. We target the service
-#    ENI, which is the first interface (device_index = 0).
-data "aws_network_interface" "cc_service_enis" {
-  count = length(data.aws_instances.cc_vms.ids)
-
-  filter {
-    name   = "attachment.instance-id"
-    values = [data.aws_instances.cc_vms.ids[count.index]]
-  }
-
-  filter {
-    name   = "attachment.device-index"
-    values = ["0"] # The service interface is the first ENI (index 0)
-  }
-}
-
-# 3. Create a simple map of {availability_zone -> network_interface_id}.
+# 1. Build {az => id} maps from module outputs (same shape ztgw gets from its
+#    vpcs module). These come from managed resources in state, so they do not
+#    depend on the Cloud Connectors being running. forwarding_eni is the
+#    service ENI (device_index 0).
 locals {
-  cc_eni_by_az = {
-    for eni in data.aws_network_interface.cc_service_enis : eni.availability_zone => eni.id
-  }
+  private_route_table_ids_by_az = zipmap(var.azs, module.vpc.private_route_table_ids)
+  cc_forwarding_eni_by_az       = zipmap(module.cc_vm.availability_zone, module.cc_vm.forwarding_eni)
 }
 
-# 4. Finally, create the routes. We loop through the VPC's private route
-#    tables and use the AZ of each to look up the correct ENI from our map.
+# 2. Create a default route in each private route table pointing to the
+#    Cloud Connector service ENI in the SAME AZ.
 resource "aws_route" "private_default_to_cc" {
-  count = length(module.vpc.private_route_table_ids)
+  # Iterate over the map of private route tables {az => route_table_id}
+  for_each = local.private_route_table_ids_by_az
 
-  route_table_id         = module.vpc.private_route_table_ids[count.index]
+  route_table_id         = each.value
   destination_cidr_block = "0.0.0.0/0"
 
-  # Use the route table's AZ to find the correct ENI ID from the map.
-  network_interface_id = local.cc_eni_by_az[module.vpc.azs[count.index]]
+  # Look up the correct ENI using the AZ key from the loop (each.key).
+  network_interface_id = local.cc_forwarding_eni_by_az[each.key]
 }
