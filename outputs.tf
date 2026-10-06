@@ -13,8 +13,8 @@ output "nat_public_ips_map" {
   description = "A map of public IPs where the key is the NAT GW ID and the value is the elastic IP."
   value = {
     for i, az in module.vpc.azs : az => {
-      id         = module.vpc.natgw_ids[i]
-      public_ip  = module.vpc.nat_public_ips[i]
+      id        = module.vpc.natgw_ids[i]
+      public_ip = module.vpc.nat_public_ips[i]
     } if length(module.vpc.natgw_ids) > 0 # Only populate if NAT GWs were created
   }
 }
@@ -96,7 +96,7 @@ output "workload_details" {
 
 output "cloud_connector_details_by_az" {
   description = "A map of all Cloud Connector VMs with their ID, Management IP, and Forwarding IP, keyed by Availability Zone."
-  
+
   value = {
     # We will loop using an index 'i' from 0 up to the number of VMs created.
     # We use length() on one of the lists (e.g., id) to determine how many times to loop.

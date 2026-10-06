@@ -1,43 +1,43 @@
 variable "vpc_name" {
- type = string
- default = "zvpc"
- description = "VPC name"
+  type        = string
+  default     = "zvpc"
+  description = "VPC name"
 }
 
 variable "aws_region" {
- type = string
- default = "ap-southeast-2"
- description = "AWS region"
+  type        = string
+  default     = "ap-southeast-2"
+  description = "AWS region"
 }
 
 variable "cidr" {
- type = string
- default = "10.177.0.0/16"
- description = "VPC CIDR"
+  type        = string
+  default     = "10.177.0.0/16"
+  description = "VPC CIDR"
 }
 
 variable "azs" {
- type = list
- default = ["ap-southeast-2a", "ap-southeast-2b"]
- description = "Availability Zones"
+  type        = list(any)
+  default     = ["ap-southeast-2a", "ap-southeast-2b"]
+  description = "Availability Zones"
 }
 
 variable "public_subnets" {
- type = list
- default = ["10.177.1.0/24", "10.177.2.0/24"]
- description = "Public Subnets"
+  type        = list(any)
+  default     = ["10.177.1.0/24", "10.177.2.0/24"]
+  description = "Public Subnets"
 }
 
 variable "private_subnets" {
- type = list
- default = ["10.177.11.0/24", "10.177.12.0/24"]
- description = "Private Subnets"
+  type        = list(any)
+  default     = ["10.177.11.0/24", "10.177.12.0/24"]
+  description = "Private Subnets"
 }
 
 variable "owner_tag" {
- type = string
- default = "johannlo"
- description = "owner"
+  type        = string
+  default     = "johannlo"
+  description = "owner"
 }
 
 variable "global_tags" {
@@ -47,15 +47,15 @@ variable "global_tags" {
 }
 
 variable "name_prefix" {
- type = string
- default = "zvpc"
- description = "owner"
+  type        = string
+  default     = "zvpc"
+  description = "owner"
 }
 
 variable "keypair" {
- type = string
- default = "keypair-zscaler-aws"
- description = "AWS SSH Key Pair"
+  type        = string
+  default     = "keypair-zscaler-aws"
+  description = "AWS SSH Key Pair"
 }
 
 variable "workload_nsg_source_prefix" {
@@ -286,7 +286,7 @@ variable "cc_vm_prov_url" {
 variable "secret_name" {
   type        = string
   description = "AWS Secrets Manager Secret Name for Cloud Connector provisioning"
-  default = "Zscaler_Cloud_Connector_Secret"
+  default     = "Zscaler_Cloud_Connector_Secret"
 }
 
 variable "http_probe_port" {
@@ -358,7 +358,7 @@ variable "cc_count" {
 variable "domain_names" {
   type        = map(any)
   description = "Domain names fqdn/wildcard to have Route 53 redirect DNS requests to Cloud Connector for ZPA. Refer to terraform.tfvars ZPA/Route 53 specific variables"
-  default = { appseg1: "planetexpress.com.au", appseg2: "mrderp.com.au", }
+  default     = { appseg1 : "planetexpress.com.au", appseg2 : "mrderp.com.au", }
 }
 
 variable "target_address" {

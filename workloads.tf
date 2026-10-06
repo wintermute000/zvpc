@@ -26,7 +26,7 @@ resource "aws_security_group" "workload" {
     create_before_destroy = true
   }
 
-  tags = merge(var.global_tags,
+  tags = merge(local.global_tags,
     { Name = "${var.name_prefix}-workload-sg-${random_string.suffix.result}" }
   )
 }
@@ -110,7 +110,7 @@ resource "aws_iam_role" "workloads_iam_role" {
   name               = "${var.name_prefix}-workloads-iam-role-${random_string.suffix.result}"
   assume_role_policy = data.aws_iam_policy_document.workloads_instance_assume_role_policy.json
 
-  tags = merge(var.global_tags)
+  tags = local.global_tags
 }
 
 
@@ -131,7 +131,7 @@ resource "aws_iam_instance_profile" "workloads_host_profile" {
   name = "${var.name_prefix}-workloads-host-profile-${random_string.suffix.result}"
   role = aws_iam_role.workloads_iam_role.name
 
-  tags = merge(var.global_tags)
+  tags = local.global_tags
 }
 
 
@@ -162,7 +162,7 @@ resource "aws_instance" "workloads" {
     http_tokens   = "required"
   }
 
-  tags = merge(var.global_tags,
+  tags = merge(local.global_tags,
     { Name = "${var.name_prefix}-workload-${each.key}-${random_string.suffix.result}" }
   )
 }

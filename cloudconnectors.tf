@@ -44,19 +44,19 @@ resource "aws_subnet" "cc_subnet" {
   cidr_block        = cidrsubnet(var.cidr, 8, 21 + count.index)
   availability_zone = module.vpc.azs[count.index]
 
-  tags = {
+  tags = merge(local.global_tags, {
     Name = "ccsubnet-${module.vpc.azs[count.index]}"
-  }
+  })
 }
 
 # 1. Create one new route table for each Cloud Connector subnet/AZ.
 resource "aws_route_table" "cc_subnet_rt" {
-  count = length(module.vpc.azs)
+  count  = length(module.vpc.azs)
   vpc_id = module.vpc.vpc_id
 
-  tags = {
+  tags = merge(local.global_tags, {
     Name = "rt-ccsubnet-${module.vpc.azs[count.index]}"
-  }
+  })
 }
 
 # 2. Add the default route to each new route table, pointing to the
@@ -66,9 +66,9 @@ resource "aws_route" "cc_nat_gateway_route" {
 
   route_table_id         = aws_route_table.cc_subnet_rt[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  
+
   # The VPC module outputs a list of NAT Gateway IDs, one per AZ.
-  nat_gateway_id         = module.vpc.natgw_ids[count.index]
+  nat_gateway_id = module.vpc.natgw_ids[count.index]
 }
 
 # 3. Associate each Cloud Connector subnet with its new dedicated route table.
@@ -84,8 +84,8 @@ resource "aws_route_table_association" "cc_subnet_assoc" {
 # Create Cloud Connectors
 ################################################################################
 module "cc_vm" {
-  source                             = "../terraform-aws-cloud-connector-modules/modules/terraform-zscc-ccvm-aws"
-  cc_count                           = var.cc_count
+  source   = "../terraform-aws-cloud-connector-modules/modules/terraform-zscc-ccvm-aws"
+  cc_count = var.cc_count
   # Fall back to var.ccami_id (Cloud Connector AMI override), not var.ami_id -- the latter is the
   # App Connector override and would build CCs from the wrong appliance image.
   ami_id                             = contains(var.ccami_id, "") ? [data.aws_ami.cloudconnector.id] : var.ccami_id
@@ -169,8 +169,8 @@ module "route53" {
   outbound_endpoint_security_group_ids = module.cc_sg.outbound_endpoint_security_group_id
   domain_names                         = var.domain_names
   #target_address                      = var.target_address
-  target_address                       = module.cc_vm.forwarding_ip
-  depends_on = [module.cc_vm]
+  target_address = module.cc_vm.forwarding_ip
+  depends_on     = [module.cc_vm]
 }
 
 

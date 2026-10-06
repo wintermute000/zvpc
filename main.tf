@@ -2,12 +2,12 @@
 # Map default tags with values to be assigned to all tagged resources
 ################################################################################
 locals {
-  global_tags = {
-    Owner                                                                                = var.owner_tag
-    ManagedBy                                                                            = "terraform"
-    Vendor                                                                               = "Zscaler"
-    "zs-app-connector-cluster/${var.name_prefix}-cluster-${random_string.suffix.result}" = "shared"
-  }
+  global_tags = merge(var.global_tags, {
+    Owner       = var.owner_tag
+    ManagedBy   = "terraform"
+    Vendor      = "Zscaler"
+    Environment = "${var.name_prefix}-${random_string.suffix.result}"
+  })
 }
 
 ################################################################################
@@ -25,7 +25,7 @@ resource "random_string" "suffix" {
 ################################################################################
 
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
   version = ">=6.6.0"
 
   name = var.vpc_name
@@ -37,9 +37,9 @@ module "vpc" {
 
 
   # Enable NAT gateways for outbound internet access from private subnets
-  enable_nat_gateway = true
-  single_nat_gateway = false # Set to true to create a single NAT gateway
-  one_nat_gateway_per_az = true # Set to true to create a NAT gateway per AZ
+  enable_nat_gateway     = true
+  single_nat_gateway     = false # Set to true to create a single NAT gateway
+  one_nat_gateway_per_az = true  # Set to true to create a NAT gateway per AZ
 
 
   # Enable private subnet default route to be changed to cloud connectors
